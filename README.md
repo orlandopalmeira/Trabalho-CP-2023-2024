@@ -1,4 +1,4 @@
-<img src='uminho.png' width="30%"/>
+<img src='EEUM_logo.png' width="30%"/>
 
 <h3 align="center">Mestrado em Engenharia Informática <br> Trabalho prático de Computação Paralela <br> 2023/2024 </h3>
 
