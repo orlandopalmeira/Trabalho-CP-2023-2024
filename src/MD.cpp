@@ -70,6 +70,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp);
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
 void computeAccelerations();
+void computeAccelerationsOPT();
 //  Numerical Recipes function for generation gaussian distribution
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
@@ -269,6 +270,7 @@ int main()
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
     computeAccelerations();
+    // computeAccelerationsOPT();
     
     
     // Print number of particles to the trajectory file
@@ -568,6 +570,45 @@ void computeAccelerations() {
     }
 }
 
+void computeAccelerationsOPT() {
+    int i, j, k;
+    double f, rSqd;
+    double rij[3]; 
+    
+    double rij0f, rij1f, rij2f, rSqd4, rSqd7;
+    
+    for (i = 0; i < N; i++) { 
+        a[i][0] = 0;
+        a[i][1] = 0;
+        a[i][2] = 0;
+    }
+    
+    for (i = 0; i < N-1; i++) {
+        for (j = i+1; j < N; j++) {
+            rSqd = 0;
+            
+            rij[0] = r[i][0] - r[j][0];
+            rSqd += rij[0] * rij[0];
+            rij[1] = r[i][1] - r[j][1];
+            rSqd += rij[1] * rij[1];
+            rij[2] = r[i][2] - r[j][2];
+            rSqd += rij[2] * rij[2];
+
+            rSqd7 = rSqd*rSqd*rSqd*rSqd*rSqd*rSqd*rSqd;
+            rSqd4 = rSqd*rSqd*rSqd*rSqd;
+            
+            f = 24 * (2 * (1.0/rSqd7) - (1.0/rSqd4));
+            rij0f = rij[0] * f; rij1f = rij[1] * f; rij2f = rij[2] * f;
+            a[i][0] += rij0f;
+            a[j][0] -= rij0f;
+            a[i][1] += rij1f;
+            a[j][1] -= rij1f;
+            a[i][2] += rij2f;
+            a[j][2] -= rij2f;
+        }
+    }
+}
+
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
 double VelocityVerlet(double dt, int iter, FILE *fp) {
     int i, j, k;
@@ -589,6 +630,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     }
     //  Update accellerations from updated positions
     computeAccelerations();
+    // computeAccelerationsOPT();
     //  Update velocity with updated acceleration
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
