@@ -1,1 +1,20 @@
-# Trabalho-CP-2023-2024
+<img src='uminho.png' width="30%"/>
+
+<h3 align="center">Mestrado em Engenharia Informática <br> Trabalho prático de Computação Paralela <br> 2023/2024 </h3>
+
+---
+<h3 align="center"> Colaboradores &#129309 </h2>
+
+<div align="center">
+
+| Nome                           | Número  |
+|--------------------------------|---------|
+| Ana Rita Santos Poças          | PG53645 |
+| Orlando José da Cunha Palmeira | PG54123 |
+
+</div>
+
+### Nota: X / 20
+
+<h3><i>Keywords</i></h3>
+CP, Computação Paralela, computacao paralela, universidade do minho, uminho, miei, mei, engenharia informatica
