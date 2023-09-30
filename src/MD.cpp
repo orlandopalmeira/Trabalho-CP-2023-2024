@@ -76,6 +76,7 @@ double gaussdist();
 void initializeVelocities();
 //  Compute total potential energy from particle coordinates
 double Potential();
+double PotentialOPT();
 //  Compute mean squared velocity from particle velocities
 double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
@@ -311,7 +312,7 @@ int main()
         //  We would also like to use the IGL to try to see if we can extract the gas constant
         mvs = MeanSquaredVelocity();
         KE = Kinetic();
-        PE = Potential();
+        PE = PotentialOPT();
         
         // Temperature from Kinetic Theory
         Temp = m*mvs/(3*kB) * TempFac;
@@ -484,6 +485,50 @@ double Potential() {
     return Pot;
 }
 
+
+/*
+term1 = quot^12 = (quot^6)^2 = ((quot^3)^2)^2 = (((sigma/rnorm)^3)^2)^2 = 
+(sigma/rnorm)^3^2^2 = (sigma/sqrt r2)^3^2^2 = sigma^3^2^2 / (sqrt r2)^3^2^2 = sigma^3^2^2 / r2^3^2 = sigma^6^2 / r2^6 = 
+(sigma^6 / r2^3)^2 = term2 * term2
+
+term2 = quot^6 = quot^3^2 = (sigma/rnorm)^3^2 = (sigma/sqrt r2)^3^2 = sigma^3^2 / (sqrt r2)^3^2 = sigma^3^2 / r2^3 = sigma^6 / r2^3
+
+Sejam sigma6 = sigma^6, r2_3 = r2^3
+
+term1 = term2 * term2
+term2 = sigma6 / r2_3
+*/
+double PotentialOPT() {
+    double quot, r2, rnorm, term1, term2, Pot;
+    int i, j, k;
+
+    double epsilon4, *ri, *rj, rikMenosrjk, quot3, quot6, quot12, sigma6, r2_3;
+    epsilon4 = 4.0*epsilon; // retira o 4*epsilon (multiplicação) de dentro do ciclo -> reduz #instruções
+    sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;// sigma^6
+
+    Pot=0.;
+    for (i=0; i<N; i++) {
+        for (j=0; j<N; j++) {
+            ri = r[i]; rj = r[j]; // assim só vamos buscar o r[i] e o r[j] uma vez em vez de 3 como estava no ciclo for da variável k
+            if (j!=i) {
+                r2=0.;
+                for (k=0; k<3; k++) {
+                    rikMenosrjk = ri[k] - rj[k]; // em vez de termos 2 multiplicações, passamos a ter 1.
+                    r2 += rikMenosrjk*rikMenosrjk;
+                }
+                r2_3 = r2*r2*r2;
+                
+                term2 = sigma6 / r2_3;
+                term1 = term2 * term2;
+                
+                Pot += epsilon4*(term1 - term2);
+                
+            }
+        }
+    }
+    
+    return Pot;
+}
 
 
 //   Uses the derivative of the Lennard-Jones potential to calculate
