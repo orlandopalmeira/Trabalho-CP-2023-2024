@@ -269,8 +269,8 @@ int main()
     //  Based on their positions, calculate the ininial intermolecular forces
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
-    computeAccelerations();
-    // computeAccelerationsOPT();
+    // computeAccelerations();
+    computeAccelerationsOPT();
     
     
     // Print number of particles to the trajectory file
@@ -629,8 +629,8 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
         //printf("  %i  %6.4e   %6.4e   %6.4e\n",i,r[i][0],r[i][1],r[i][2]);
     }
     //  Update accellerations from updated positions
-    computeAccelerations();
-    // computeAccelerationsOPT();
+    // computeAccelerations();
+    computeAccelerationsOPT();
     //  Update velocity with updated acceleration
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
