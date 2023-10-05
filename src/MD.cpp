@@ -504,23 +504,25 @@ double PotentialOPT() {
     double r2, term1, term2, Pot;
     int i, j;
 
-    double epsilon4, rikMenosrjk, sigma6, sigma3, r2_3;
+    double rikMenosrjk, sigma6, sigma3, r2_3;
 
-    epsilon4 = 4.0*epsilon; // retira o 4*epsilon (multiplicação) de dentro do ciclo -> reduz #instruções
     sigma3 = sigma*sigma*sigma; // sigma^3
     sigma6 = sigma3*sigma3;// sigma^6
 
+    double ri0, ri1, ri2, *rj;
+
     Pot=0.;
     for (i=0; i<N; i++) {
+        ri0 = r[i][0]; ri1 = r[i][1]; ri2 = r[i][2]; // para reduzir os acessos r[i] ao array r
         for (j=0; j<N; j++) {
             if (j!=i) {
-                
+                rj = r[j]; // reduz os acessos r[j]
                 // Desdobramento do ciclo for
-                rikMenosrjk = r[i][0] - r[j][0];
+                rikMenosrjk = ri0 - rj[0];
                 r2 = rikMenosrjk*rikMenosrjk;
-                rikMenosrjk = r[i][1] - r[j][1];
+                rikMenosrjk = ri1 - rj[1];
                 r2 += rikMenosrjk*rikMenosrjk;
-                rikMenosrjk = r[i][2] - r[j][2];
+                rikMenosrjk = ri2 - rj[2];
                 r2 += rikMenosrjk*rikMenosrjk;
                 r2_3 = r2*r2*r2;
                 
@@ -528,13 +530,12 @@ double PotentialOPT() {
                 term2 = sigma6 / r2_3;
                 term1 = term2 * term2;
                 
-                Pot += epsilon4*(term1 - term2);
+                Pot += term1-term2; // como term1-term2 está sempre a ser multiplicado por 4*epsilon, então podemos colocar epsilon*4 em evidência, colocando essa operação fora do ciclo.
                 
             }
         }
     }
-    
-    return Pot;
+    return Pot*epsilon*4.0; // passamos o epsilon*4 para aqui porque pode ser colocado em evidência.
 }
 
 
@@ -588,13 +589,19 @@ void computeAccelerationsOPT() {
         a[i][1] = 0;
         a[i][2] = 0;
     }
+
+    double ri0, ri1, ri2, *rj;
+    double ai0, ai1, ai2, *aj;
     
     for (i = 0; i < N-1; i++) {
+        ri0 = r[i][0]; ri1 = r[i][1]; ri2 = r[i][2]; // reduz os acessos r[i]
+        ai0 = 0; ai1 = 0; ai2 = 0; // reduz os acessos a[i]
         for (j = i+1; j < N; j++) {
+            rj = r[j]; aj = a[j];
             // ciclo for desdobrado
-            rij[0] = r[i][0] - r[j][0];
-            rij[1] = r[i][1] - r[j][1];
-            rij[2] = r[i][2] - r[j][2];
+            rij[0] = ri0 - rj[0];
+            rij[1] = ri1 - rj[1];
+            rij[2] = ri2 - rj[2];
             rSqd = rij[0] * rij[0] + 
                    rij[1] * rij[1] + 
                    rij[2] * rij[2];
@@ -606,13 +613,16 @@ void computeAccelerationsOPT() {
             f = (48-24*rSqd3) / rSqd7;
             // ciclo for desdobrado e redução do numero de multiplicações rij[x]*f
             rij0f = rij[0] * f; rij1f = rij[1] * f; rij2f = rij[2] * f;
-            a[i][0] += rij0f;
-            a[j][0] -= rij0f;
-            a[i][1] += rij1f;
-            a[j][1] -= rij1f;
-            a[i][2] += rij2f;
-            a[j][2] -= rij2f;
+            ai0 += rij0f;
+            aj[0] -= rij0f;
+            ai1 += rij1f;
+            aj[1] -= rij1f;
+            ai2 += rij2f;
+            aj[2] -= rij2f;
         }
+        a[i][0] += ai0; // as vars ai0, ai1 e ai2 reduzem os acessos ao array a, mas implicam estas 3 somas
+        a[i][1] += ai1;
+        a[i][2] += ai2;
     }
 }
 
