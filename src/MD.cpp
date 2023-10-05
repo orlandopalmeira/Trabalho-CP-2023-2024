@@ -597,7 +597,7 @@ void computeAccelerationsOPT() {
         ri0 = r[i][0]; ri1 = r[i][1]; ri2 = r[i][2]; // reduz os acessos r[i]
         ai0 = 0; ai1 = 0; ai2 = 0; // reduz os acessos a[i]
         for (j = i+1; j < N; j++) {
-            rj = r[j]; aj = a[j];
+            rj = r[j]; aj = a[j]; // reduz os acessos r[j] e a[j]
             // ciclo for desdobrado
             rij[0] = ri0 - rj[0];
             rij[1] = ri1 - rj[1];
