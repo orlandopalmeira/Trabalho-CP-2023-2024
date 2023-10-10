@@ -525,7 +525,7 @@ double PotentialOPT() {
     double r2, term1, term2, Pot;
     int i, j;
 
-    double rikMenosrjk, sigma6, sigma3, r2_3;
+    double rikMenosrjk, sigma6, sigma3;
 
     sigma3 = sigma*sigma*sigma; // sigma^3
     sigma6 = sigma3*sigma3;// sigma^6
@@ -545,10 +545,9 @@ double PotentialOPT() {
                 r2 += rikMenosrjk*rikMenosrjk;
                 rikMenosrjk = ri2 - rj[2];
                 r2 += rikMenosrjk*rikMenosrjk;
-                r2_3 = r2*r2*r2;
                 
                 // novos term1 e term2 explicados no comentário acima.
-                term2 = sigma6 / r2_3;
+                term2 = sigma6 / (r2*r2*r2);
                 term1 = term2 * term2;
                 
                 Pot += term1-term2; // como term1-term2 está sempre a ser multiplicado por 4*epsilon, então podemos colocar epsilon*4 em evidência, colocando essa operação fora do ciclo.
