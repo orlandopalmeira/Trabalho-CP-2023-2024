@@ -1,11 +1,12 @@
 CC = gcc
 SRC = src/
-CFLAGS = -O3 -pg # none
-
+CFLAGS = -O3 -fno-omit-frame-pointer -pg # none
+# -funroll-loops
 .DEFAULT_GOAL = MD.exe
+FILE = MD.cpp
 
 MD.exe: $(SRC)/MD.cpp
-	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
+	$(CC) $(CFLAGS) $(SRC)$(FILE) -lm -o MD.exe
 
 clean:
 	rm ./MD.exe
@@ -17,10 +18,16 @@ clean:
 perf:
 	srun --partition=cpar perf stat -e instructions,cycles ./MD.exe < inputdata.txt
 
-re:
+perfCacheMisses: 
+	srun --partition=cpar perf stat -e L1-dcache-load-misses -M cpi ./MD.exe < inputdata.txt
+
+
+compare:
+	$(CC) $(CFLAGS) $(SRC)MD_flat.cpp -lm -o MD.exe
+	make perfCacheMisses
+	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
+	make perfCacheMisses
 	make clean
-	make 
-	make perf
 
 run:
 	./MD.exe < inputdata.txt
