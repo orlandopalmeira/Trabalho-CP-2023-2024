@@ -525,29 +525,39 @@ double PotentialOPT() {
     double r2, term1, term2, Pot;
     int i, j;
     
-    double sigma6;
+    double sigma6, rij0, rij1, rij2;
     sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
-    double rij0, rij1, rij2;
+
     Pot=0.;
     for (i=0; i<N; i++) {
-        for (j=0; j<N; j++) {
-            if (j!=i) {
-                rij0 = r[i][0]-r[j][0];
-                rij1 = r[i][1]-r[j][1];
-                rij2 = r[i][2]-r[j][2];
-                r2 = rij0 * rij0 +
-                     rij1 * rij1 +
-                     rij2 * rij2;
+        // Both loops are the same, but now they don't have the 'if(j!=i)'. We use this loop duplication to eliminate the 'if(i!=j)'.
+        for (j=0; j<i; j++) {
+            // loop unrolling and vars rij0, rij1 and rij2 that store the subtractions results in order to not execute them twice.
+            rij0 = r[i][0]-r[j][0];
+            rij1 = r[i][1]-r[j][1];
+            rij2 = r[i][2]-r[j][2];
+            r2 = rij0 * rij0 + rij1 * rij1 + rij2 * rij2;
 
-                term2 = sigma6/(r2*r2*r2);
-                term1 = term2*term2;
-                
-                Pot += term1 - term2;
-            }
+            // mathematical simplification
+            term2 = sigma6/(r2*r2*r2);
+            term1 = term2*term2;
+            
+            Pot += term1 - term2;
+        }
+        for (j=i+1; j<N; j++) {
+            rij0 = r[i][0]-r[j][0];
+            rij1 = r[i][1]-r[j][1];
+            rij2 = r[i][2]-r[j][2];
+            r2 = rij0 * rij0 + rij1 * rij1 + rij2 * rij2;
+
+            term2 = sigma6/(r2*r2*r2);
+            term1 = term2*term2;
+            
+            Pot += term1 - term2;
         }
     }
     
-    return 4*epsilon*Pot;
+    return 4*epsilon*Pot; // We can factor out the term 4*epsilon from the loops involving variable 'j' because it is a constant (meaning it doesn't depend on the iterations of the loop) and is used in a summation.
 }
 
 
@@ -589,32 +599,35 @@ void computeAccelerations() {
 }
 
 void computeAccelerationsOPT() {
-    int i, j, k;
+    int i, j;
     double f, rSqd;
     double rij[3];
     
     double rSqd3, rSqd7, ai0, ai1, ai2;
     
     for (i = 0; i < N; i++) {
+        // loop unrolling
         a[i][0] = 0;
         a[i][1] = 0;
         a[i][2] = 0;
     }
 
     for (i = 0; i < N-1; i++) {
-        ai0 = 0; ai1 = 0; ai2 = 0;
+        ai0 = 0; ai1 = 0; ai2 = 0; // Reduces the number of accesses to a[i][0], a[i][1] and a[i][2] by storing the sum's value and writing it into the matrix outside of the loop j.
         for (j = i+1; j < N; j++) {
+            // loop unrolling
             rij[0] = r[i][0] - r[j][0];
             rij[1] = r[i][1] - r[j][1];
             rij[2] = r[i][2] - r[j][2];
             rSqd = rij[0] * rij[0] +
                    rij[1] * rij[1] +
                    rij[2] * rij[2];
-            
+            //  mathematical simplification
             rSqd3 = rSqd*rSqd*rSqd;
             rSqd7 = rSqd3*rSqd3*rSqd;
-
             f = (48-24*rSqd3) / rSqd7;
+
+            // loop unrolling using the vars ai0, ai1 and ai2 that reduce the number of accesses to the matrix a
             ai0     += rij[0] * f;
             a[j][0] -= rij[0] * f;
             ai1     += rij[1] * f;
@@ -622,6 +635,7 @@ void computeAccelerationsOPT() {
             ai2     += rij[2] * f;
             a[j][2] -= rij[2] * f;
         }
+        // We only write the value into the matrix when we're outside of loop j in order to minimize the number of accesses to the matrix a.
         a[i][0] += ai0;
         a[i][1] += ai1;
         a[i][2] += ai2;
