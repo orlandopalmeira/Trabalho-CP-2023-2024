@@ -520,6 +520,14 @@ Sejam sigma6 = sigma^6, r2_3 = r2^3
 
 term1 = term2 * term2
 term2 = sigma6 / r2_3
+-------------------------------------------------------------------------------
+Nesta versão optimizada, o j pode ir apenas de i+1 até N pelos seguintes motivos:
+- i e j são sempre diferentes (garantido pelo if (i!=j))
+- Como ambas as variáveis i e j variam de 0 a N-1, então podemos concluir que cada par (i,j) envolvido no cálculo terá um par simétrico correspondente, isto é, (j,i). 
+- Sabemos que o valor adicionado à variável Pot na iteração cujo par é (i,j) é exactamente igual ao valor adicionado à variável Pot na iteração cujo par é (j,i), devido ao seguinte:
+  Iteração no par (i,j):
+    r2 = (r[i][k]-r[j][k])^2
+     
 */
 double PotentialOPT() {
     double r2, term1, term2, Pot;
@@ -531,7 +539,7 @@ double PotentialOPT() {
     Pot=0.;
     for (i=0; i<N; i++) {
         // Both loops are the same, but now they don't have the 'if(j!=i)'. We use this loop duplication to eliminate the 'if(i!=j)'.
-        for (j=0; j<i; j++) {
+        for (j=i+1; j<N; j++) { // We can have j going from i+1 to N because there is a symmetry between i and j. Basically, the value of r2 is equal when we have a pair (i,j) and (j,i). So we can only start from i+1. However, we are executing half of the operations, so we can not use 4*epsilon but we have to use 8*epsilon. 
             // loop unrolling and vars rij0, rij1 and rij2 that store the subtractions results in order to not execute them twice.
             rij0 = r[i][0]-r[j][0];
             rij1 = r[i][1]-r[j][1];
@@ -544,20 +552,9 @@ double PotentialOPT() {
             
             Pot += term1 - term2;
         }
-        for (j=i+1; j<N; j++) {
-            rij0 = r[i][0]-r[j][0];
-            rij1 = r[i][1]-r[j][1];
-            rij2 = r[i][2]-r[j][2];
-            r2 = rij0 * rij0 + rij1 * rij1 + rij2 * rij2;
-
-            term2 = sigma6/(r2*r2*r2);
-            term1 = term2*term2;
-            
-            Pot += term1 - term2;
-        }
     }
     
-    return 4*epsilon*Pot; // We can factor out the term 4*epsilon from the loops involving variable 'j' because it is a constant (meaning it doesn't depend on the iterations of the loop) and is used in a summation.
+    return 8*epsilon*Pot; // We can factor out the term epsilon from the loops involving variable 'j' because it is a constant (meaning it doesn't depend on the iterations of the loop) and is used in a summation.
 }
 
 
