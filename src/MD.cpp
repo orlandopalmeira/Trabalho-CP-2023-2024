@@ -538,8 +538,7 @@ double PotentialOPT() {
 
     Pot=0.;
     for (i=0; i<N; i++) {
-        // Both loops are the same, but now they don't have the 'if(j!=i)'. We use this loop duplication to eliminate the 'if(i!=j)'.
-        for (j=i+1; j<N; j++) { // We can have j going from i+1 to N because there is a symmetry between i and j. Basically, the value of r2 is equal when we have a pair (i,j) and (j,i). So we can only start from i+1. However, we are executing half of the operations, so we can not use 4*epsilon but we have to use 8*epsilon. 
+        for (j=i+1; j<N; j++) { // We can have j going from i+1 to N because there is a symmetry between i and j. Basically, the value of r2 is equal when we have a pair (i,j) and (j,i). So we can only start from i+1. However, we are executing half of the operations (because we don't need do execute the other half since it has the same values), so we can not use 4*epsilon but we have to use 8*epsilon. 
             // loop unrolling and vars rij0, rij1 and rij2 that store the subtractions results in order to not execute them twice.
             rij0 = r[i][0]-r[j][0];
             rij1 = r[i][1]-r[j][1];

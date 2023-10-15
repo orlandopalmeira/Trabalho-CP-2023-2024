@@ -7,6 +7,9 @@ FILE = MD.cpp
 MD.exe: $(SRC)/MD.cpp
 	$(CC) $(CFLAGS) $(SRC)$(FILE) -lm -o MD.exe
 
+assembly:
+	$(CC) -S $(CFLAGS) $(SRC)$(FILE) -lm -o MD.s 
+
 clean:
 	rm ./MD.exe
 	rm cp_average.txt
