@@ -1,6 +1,6 @@
 CC = gcc
 SRC = src/
-CFLAGS = -O3 -ftree-vectorize -msse4 -fno-omit-frame-pointer -pg # none
+CFLAGS = -O3 -funroll-loops -ftree-vectorize -msse4 -fno-omit-frame-pointer -pg # none
 .DEFAULT_GOAL = MD.exe
 FILE = MD.cpp
 

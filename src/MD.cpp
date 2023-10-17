@@ -58,6 +58,9 @@ double a[MAXPART][3];
 //  Force
 double F[MAXPART][3];
 
+//Potential
+double P;
+
 // atom type
 char atype[10];
 //  Function prototypes
@@ -318,7 +321,7 @@ int main()
         //  We would also like to use the IGL to try to see if we can extract the gas constant
         mvs =MeanSquaredVelocityOPT();
         KE = Kinetic();
-        PE = PotentialOPT();
+        PE = P;
         
         // Temperature from Kinetic Theory
         Temp = m*mvs/(3*kB) * TempFac;
@@ -595,12 +598,15 @@ void computeAccelerations() {
 }
 
 void computeAccelerationsOPT() {
-    int i, j;
+    P = 0;
+    int i, j, k;
     double f, rSqd;
     double rij[3];
     
-    double rSqd3, rSqd7, ai0, ai1, ai2;
-    
+    double rSqd3, rSqd7, ai0, ai1, ai2; // computeAccelerations variables
+
+    double sigma6, term1, term2, r2; // Potential variables
+    sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
     for (i = 0; i < N; i++) {
         // loop unrolling
         a[i][0] = 0;
@@ -615,13 +621,20 @@ void computeAccelerationsOPT() {
             rij[0] = r[i][0] - r[j][0];
             rij[1] = r[i][1] - r[j][1];
             rij[2] = r[i][2] - r[j][2];
-            rSqd = rij[0] * rij[0] +
-                   rij[1] * rij[1] +
-                   rij[2] * rij[2];
+            rSqd = r2 = rij[0] * rij[0] +
+                        rij[1] * rij[1] +
+                        rij[2] * rij[2];
+
             //  mathematical simplification
             rSqd3 = rSqd*rSqd*rSqd;
             rSqd7 = rSqd3*rSqd3*rSqd;
             f = (48-24*rSqd3) / rSqd7;
+
+            // BEGIN OF POTENTIAL OPERATIONS
+            term2 = sigma6/(r2*r2*r2);
+            term1 = term2*term2;
+            P += term1 - term2;
+            // END OF POTENTIAL OPERATIONS
 
             // loop unrolling using the vars ai0, ai1 and ai2 that reduce the number of accesses to the matrix a
             ai0     += rij[0] * f;
@@ -636,6 +649,9 @@ void computeAccelerationsOPT() {
         a[i][1] += ai1;
         a[i][2] += ai2;
     }
+    // BEGIN OF POTENTIAL OPERATIONS
+    P *= 8*epsilon;
+    // END OF POTENTIAL OPERATIONS
 }
 
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
