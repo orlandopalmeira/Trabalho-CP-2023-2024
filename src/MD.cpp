@@ -598,15 +598,15 @@ void computeAccelerations() {
 }
 
 void computeAccelerationsOPT() {
-    P = 0;
-    int i, j, k;
+    int register i, j;
     double f, rSqd;
     double rij[3];
     
-    double rSqd3, rSqd7, ai0, ai1, ai2; // computeAccelerations variables
+    double rSqd3, rSqd7, ai0, ai1, ai2, rijf[3]; // computeAccelerations variables
 
-    double sigma6, term1, term2, r2; // Potential variables
+    double sigma6, term1, term2, r2, Pot; // Potential variables
     sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
+    Pot = 0;
     for (i = 0; i < N; i++) {
         // loop unrolling
         a[i][0] = 0;
@@ -631,18 +631,20 @@ void computeAccelerationsOPT() {
             f = (48-24*rSqd3) / rSqd7;
 
             // BEGIN OF POTENTIAL OPERATIONS
+            // mathematical simplification of Potential calculations
             term2 = sigma6/(r2*r2*r2);
             term1 = term2*term2;
-            P += term1 - term2;
+            Pot += term1 - term2;
             // END OF POTENTIAL OPERATIONS
 
             // loop unrolling using the vars ai0, ai1 and ai2 that reduce the number of accesses to the matrix a
-            ai0     += rij[0] * f;
-            a[j][0] -= rij[0] * f;
-            ai1     += rij[1] * f;
-            a[j][1] -= rij[1] * f;
-            ai2     += rij[2] * f;
-            a[j][2] -= rij[2] * f;
+            rijf[0] = rij[0]*f; rijf[1] = rij[1]*f; rijf[2] = rij[2]*f; // avoids duplicated multiplications
+            ai0     += rijf[0];//rij[0] * f;
+            ai1     += rijf[1];//rij[1] * f;
+            ai2     += rijf[2];//rij[2] * f;
+            a[j][0] -= rijf[0];//rij[0] * f;
+            a[j][1] -= rijf[1];//rij[1] * f;
+            a[j][2] -= rijf[2];//rij[2] * f;
         }
         // We only write the value into the matrix when we're outside of loop j in order to minimize the number of accesses to the matrix a.
         a[i][0] += ai0;
@@ -650,7 +652,8 @@ void computeAccelerationsOPT() {
         a[i][2] += ai2;
     }
     // BEGIN OF POTENTIAL OPERATIONS
-    P *= 8*epsilon;
+    Pot *= 8*epsilon;
+    P = Pot;
     // END OF POTENTIAL OPERATIONS
 }
 
