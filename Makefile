@@ -1,6 +1,6 @@
 CC = gcc
 SRC = src/
-CFLAGS = -O3 -funroll-loops -ftree-vectorize -msse4 -fopt-info-vec -fno-omit-frame-pointer -pg # none
+CFLAGS = -O3 -funroll-loops -finline-functions -ftree-vectorize -msse4 -fopt-info-vec -fno-omit-frame-pointer -pg # none
 .DEFAULT_GOAL = all
 
 all: MDseq.exe MDpar.exe

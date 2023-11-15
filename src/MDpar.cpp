@@ -598,45 +598,78 @@ void computeAccelerations() {
     }
 }
 
-void computeAccelerationsOPT() {
-    int i, j;
-    double f, rSqd;
-    double rij[3];
-    
-    double rSqd3, rSqd7, ai0, ai1, ai2, rijf[3]; // computeAccelerations variables
-
-    double sigma6, term1, term2, r2, Pot; // Potential variables
-    sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
-    Pot = 0;
+void zero_matrix_a(){
     #pragma omp parallel for
-    for (i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
         // loop unrolling
         a[i][0] = 0;
         a[i][1] = 0;
         a[i][2] = 0;
     }
-    #pragma omp parallel for reduction(+:Pot) private(rij, rSqd, rSqd3, rSqd7, f, ai0, ai1, ai2, term1, term2)
+}
+
+double calc_rSqd(double *rij, int i, int j){
+    rij[0] = r[i][0] - r[j][0];
+    rij[1] = r[i][1] - r[j][1];
+    rij[2] = r[i][2] - r[j][2];
+    return rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2];
+}
+
+double calc_f(double rSqd){
+    double rSqd3 = rSqd*rSqd*rSqd;
+    double rSqd7 = rSqd3*rSqd3*rSqd;
+    return (48-24*rSqd3) / rSqd7;
+}
+
+double calc_Pot(double sigma6, double r2){
+    double term2 = sigma6/(r2*r2*r2);
+    double term1 = term2*term2;
+    return term1 - term2;
+}
+
+void computeAccelerationsOPT() {
+    int i, j;
+    double f, rSqd;
+    double rij[3];
+    
+    double /*rSqd3, rSqd7,*/ ai0, ai1, ai2, rijf[3]; // computeAccelerations variables
+
+    double sigma6, /*term1, term2,*/ r2, Pot; // Potential variables
+    sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
+    Pot = 0;
+    // #pragma omp parallel for
+    // for (i = 0; i < N; i++) {
+    //     // loop unrolling
+    //     a[i][0] = 0;
+    //     a[i][1] = 0;
+    //     a[i][2] = 0;
+    // }
+    zero_matrix_a();
+    #pragma omp parallel for reduction(+:Pot) private(rij, rSqd, f, ai0, ai1, ai2, rijf)
     for (i = 0; i < N-1; i++) {
         ai0 = 0; ai1 = 0; ai2 = 0; // Reduces the number of accesses to a[i][0], a[i][1] and a[i][2] by storing the sum's value and writing it into the matrix outside of the loop j.
         for (j = i+1; j < N; j++) {
             // loop unrolling
-            rij[0] = r[i][0] - r[j][0];
-            rij[1] = r[i][1] - r[j][1];
-            rij[2] = r[i][2] - r[j][2];
-            rSqd = r2 = rij[0] * rij[0] +
-                        rij[1] * rij[1] +
-                        rij[2] * rij[2];
+            // rij[0] = r[i][0] - r[j][0];
+            // rij[1] = r[i][1] - r[j][1];
+            // rij[2] = r[i][2] - r[j][2];
+            // rSqd = r2 = rij[0] * rij[0] +
+            //             rij[1] * rij[1] +
+            //             rij[2] * rij[2];
+            rSqd = r2 = calc_rSqd(rij,i,j);
 
             //  mathematical simplification
-            rSqd3 = rSqd*rSqd*rSqd;
-            rSqd7 = rSqd3*rSqd3*rSqd;
-            f = (48-24*rSqd3) / rSqd7;
+            // rSqd3 = rSqd*rSqd*rSqd;
+            // rSqd7 = rSqd3*rSqd3*rSqd;
+            // f = (48-24*rSqd3) / rSqd7;
+            f = calc_f(rSqd);
 
             // BEGIN OF POTENTIAL OPERATIONS
             // mathematical simplification of Potential calculations
-            term2 = sigma6/(r2*r2*r2);
-            term1 = term2*term2;
-            Pot += term1 - term2;
+            // term2 = sigma6/(r2*r2*r2);
+            // term1 = term2*term2;
+            // Pot += term1 - term2;
+            Pot += calc_Pot(sigma6, r2);
             // END OF POTENTIAL OPERATIONS
 
             // loop unrolling using the vars ai0, ai1 and ai2 that reduce the number of accesses to the matrix a
