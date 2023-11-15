@@ -219,7 +219,7 @@ int main()
     
     scanf("%lf",&rho);
     
-    N = 10*216;
+    N = 5000; //needed for phase 2
     Vol = N/(rho*NA);
     
     Vol /= VolFac;
@@ -613,7 +613,7 @@ void computeAccelerationsOPT() {
         a[i][1] = 0;
         a[i][2] = 0;
     }
-
+   #pragma omp parallel for reduction(+:Pot)
     for (i = 0; i < N-1; i++) {
         ai0 = 0; ai1 = 0; ai2 = 0; // Reduces the number of accesses to a[i][0], a[i][1] and a[i][2] by storing the sum's value and writing it into the matrix outside of the loop j.
         for (j = i+1; j < N; j++) {
