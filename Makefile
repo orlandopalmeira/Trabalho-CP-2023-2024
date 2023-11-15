@@ -1,35 +1,35 @@
 CC = gcc
 SRC = src/
-CFLAGS = -O3 -funroll-loops -ftree-vectorize -msse4 -fopt-info-vec -lm -fno-omit-frame-pointer -fopenmp -pg # none
-.DEFAULT_GOAL = MD.exe
-FILE = MD.cpp
+CFLAGS = -O3 -funroll-loops -ftree-vectorize -msse4 -fopt-info-vec -fno-omit-frame-pointer -pg # none
+.DEFAULT_GOAL = all
 
-MD.exe: $(SRC)/MD.cpp
-	$(CC) $(CFLAGS) $(SRC)$(FILE) -lm -o MD.exe
+all: MDseq.exe MDpar.exe
 
-assembly:
-	$(CC) -S $(CFLAGS) $(SRC)$(FILE) -lm -o MD.s 
+MDseq.exe: $(SRC)/MDseq.cpp
+	module load gcc/11.2.0;
+	$(CC) $(CFLAGS) $(SRC)MDseq.cpp -lm -o MDseq.exe
+
+MDpar.exe: $(SRC)/MDpar.cpp
+	module load gcc/11.2.0;
+	$(CC) $(CFLAGS) $(SRC)MDpar.cpp -lm -fopenmp -o MDpar.exe
 
 clean:
-	rm ./MD.exe
-	rm cp_average.txt
-	rm cp_output.txt
-	rm cp_traj.xyz
-	rm gmon.out
+	-rm ./MD*.exe
+	-rm cp_average.txt
+	-rm cp_output.txt
+	-rm cp_traj.
+	-rm gmon.out
+	-rm slurm-*.out
 
-perf:
-	srun --partition=cpar perf stat -e instructions,cycles ./MD.exe < inputdata.txt
+runs:
+	sbatch runS.sh
 
-perfCacheMisses: 
-	srun --partition=cpar perf stat -e L1-dcache-load-misses -M cpi ./MD.exe < inputdata.txt
+runp:
+	sbatch runP.sh
 
+runseq:
+	./MDseq.exe < inputdata.txt
 
-compare:
-	$(CC) $(CFLAGS) $(SRC)MD_flat.cpp -lm -o MD.exe
-	make perfCacheMisses
-	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
-	make perfCacheMisses
-	make clean
+runpar:
+	./MDpar.exe < inputdata.tx
 
-run:
-	./MD.exe < inputdata.txt

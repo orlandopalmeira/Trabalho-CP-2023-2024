@@ -27,6 +27,7 @@
 #include<stdlib.h>
 #include<math.h>
 #include<string.h>
+#include<omp.h>
 
 
 // Number of particles
@@ -219,7 +220,7 @@ int main()
     
     scanf("%lf",&rho);
     
-    N = 5000; //needed for phase 2
+    N = 5000;
     Vol = N/(rho*NA);
     
     Vol /= VolFac;
@@ -598,7 +599,7 @@ void computeAccelerations() {
 }
 
 void computeAccelerationsOPT() {
-    int register i, j;
+    int i, j;
     double f, rSqd;
     double rij[3];
     
@@ -607,13 +608,14 @@ void computeAccelerationsOPT() {
     double sigma6, term1, term2, r2, Pot; // Potential variables
     sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
     Pot = 0;
+    #pragma omp parallel for
     for (i = 0; i < N; i++) {
         // loop unrolling
         a[i][0] = 0;
         a[i][1] = 0;
         a[i][2] = 0;
     }
-   #pragma omp parallel for reduction(+:Pot)
+    #pragma omp parallel for reduction(+:Pot) private(rij, rSqd, rSqd3, rSqd7, f, ai0, ai1, ai2, term1, term2)
     for (i = 0; i < N-1; i++) {
         ai0 = 0; ai1 = 0; ai2 = 0; // Reduces the number of accesses to a[i][0], a[i][1] and a[i][2] by storing the sum's value and writing it into the matrix outside of the loop j.
         for (j = i+1; j < N; j++) {
