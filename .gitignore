@@ -3,3 +3,4 @@ cp_average.txt
 cp_output.txt
 cp_traj.xyz
 gmon.out
+results/*
