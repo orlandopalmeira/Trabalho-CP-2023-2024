@@ -17,7 +17,7 @@ clean:
 	-rm ./MD*.exe
 	-rm cp_average.txt
 	-rm cp_output.txt
-	-rm cp_traj.
+	-rm cp_traj.xyz
 	-rm gmon.out
 	-rm slurm-*.out
 
