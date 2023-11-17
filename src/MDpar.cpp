@@ -489,13 +489,13 @@ void computeAccelerationsOPT() {
     double sigma6, term1, term2, r2, Pot; 
     sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
     Pot = 0;
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic)
     for (i = 0; i < N; i++) {
         a[i][0] = 0;
         a[i][1] = 0;
         a[i][2] = 0;
     }
-    #pragma omp parallel for reduction(+:Pot,a[:N][:3]) private(ai0,ai1,ai2,rij,rSqd,r2,rSqd3,rSqd7,f,term1,term2,rijf)
+    #pragma omp parallel for schedule(dynamic) reduction(+:Pot,a[:N][:3]) private(ai0,ai1,ai2,rij,rSqd,r2,rSqd3,rSqd7,f,term1,term2,rijf)
     for (i = 0; i < N-1; i++) {
         ai0 = 0; ai1 = 0; ai2 = 0; 
         for (j = i+1; j < N; j++) {

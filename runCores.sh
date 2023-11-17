@@ -7,6 +7,7 @@ START_TIME="2023-11-17T04:00:00"
 for CORES in $CORES_LIST; do
     JOB_NAME="${CORES}_cores"
     echo "A correr $JOB_NAME"
-    # sbatch --output=results/$JOB_NAME.out --partition=cpar --cpus-per-task=$CORES runP2.sh
-    sbatch --output=results/$JOB_NAME.out --partition=cpar --cpus-per-task=$CORES --begin=$START_TIME runP2.sh
+    sbatch --output=results/$JOB_NAME.out --partition=cpar --cpus-per-task=$CORES runP2.sh
+    # sbatch --output=results/$JOB_NAME.out --partition=cpar --cpus-per-task=$CORES --begin=$START_TIME runP2.sh
+    sleep 10
 done
