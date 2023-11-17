@@ -74,16 +74,12 @@ double VelocityVerlet(double dt, int iter, FILE *fp);
 double VelocityVerletOPT(double dt, int iter, FILE *fp);  
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
-void computeAccelerations();
 void computeAccelerationsOPT();
 //  Numerical Recipes function for generation gaussian distribution
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
 void initializeVelocities();
 void initializeVelocitiesOPT();
-//  Compute total potential energy from particle coordinates
-double Potential();
-double PotentialOPT();
 //  Compute mean squared velocity from particle velocities
 double MeanSquaredVelocity();
 double MeanSquaredVelocityOPT();
@@ -483,143 +479,26 @@ double Kinetic() { //Write Function here!
     
 }
 
-
-// Function to calculate the potential energy of the system
-double Potential() {
-    double quot, r2, rnorm, term1, term2, Pot;
-    int i, j, k;
-    
-    Pot=0.;
-    for (i=0; i<N; i++) {
-        for (j=0; j<N; j++) {
-            
-            if (j!=i) {
-                r2=0.;
-                for (k=0; k<3; k++) {
-                    r2 += (r[i][k]-r[j][k])*(r[i][k]-r[j][k]);
-                }
-                rnorm=sqrt(r2);
-                quot=sigma/rnorm;
-                term1 = pow(quot,12.);
-                term2 = pow(quot,6.);
-                
-                Pot += 4*epsilon*(term1 - term2);
-                
-            }
-        }
-    }
-    
-    return Pot;
-}
-
-
-/*
-term1 = quot^12 = (quot^6)^2 = ((quot^3)^2)^2 = (((sigma/rnorm)^3)^2)^2 = 
-(sigma/rnorm)^3^2^2 = (sigma/sqrt r2)^3^2^2 = sigma^3^2^2 / (sqrt r2)^3^2^2 = sigma^3^2^2 / r2^3^2 = sigma^6^2 / r2^6 = 
-(sigma^6 / r2^3)^2 = term2 * term2
-
-term2 = quot^6 = quot^3^2 = (sigma/rnorm)^3^2 = (sigma/sqrt r2)^3^2 = sigma^3^2 / (sqrt r2)^3^2 = sigma^3^2 / r2^3 = sigma^6 / r2^3
-
-Sejam sigma6 = sigma^6, r2_3 = r2^3
-
-term1 = term2 * term2
-term2 = sigma6 / r2_3
--------------------------------------------------------------------------------
-Nesta versão optimizada, o j pode ir apenas de i+1 até N pelos seguintes motivos:
-- i e j são sempre diferentes (garantido pelo if (i!=j))
-- Como ambas as variáveis i e j variam de 0 a N-1, então podemos concluir que cada par (i,j) envolvido no cálculo terá um par simétrico correspondente, isto é, (j,i). 
-- Sabemos que o valor adicionado à variável Pot na iteração cujo par é (i,j) é exactamente igual ao valor adicionado à variável Pot na iteração cujo par é (j,i), devido ao seguinte:
-  Iteração no par (i,j):
-    r2 = (r[i][k]-r[j][k])^2
-     
-*/
-double PotentialOPT() {
-    double r2, term1, term2, Pot;
-    int i, j;
-    
-    double sigma6, rij0, rij1, rij2;
-    sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
-
-    Pot=0.;
-    for (i=0; i<N; i++) {
-        for (j=i+1; j<N; j++) { // We can have j going from i+1 to N because there is a symmetry between i and j. Basically, the value of r2 is equal when we have a pair (i,j) and (j,i). So we can only start from i+1. However, we are executing half of the operations (because we don't need do execute the other half since it has the same values), so we can not use 4*epsilon but we have to use 8*epsilon. 
-            // loop unrolling and vars rij0, rij1 and rij2 that store the subtractions results in order to not execute them twice.
-            rij0 = r[i][0]-r[j][0];
-            rij1 = r[i][1]-r[j][1];
-            rij2 = r[i][2]-r[j][2];
-            r2 = rij0 * rij0 + rij1 * rij1 + rij2 * rij2;
-
-            // mathematical simplification
-            term2 = sigma6/(r2*r2*r2);
-            term1 = term2*term2;
-            
-            Pot += term1 - term2;
-        }
-    }
-    
-    return 8*epsilon*Pot; // We can factor out the term epsilon from the loops involving variable 'j' because it is a constant (meaning it doesn't depend on the iterations of the loop) and is used in a summation.
-}
-
-
-//   Uses the derivative of the Lennard-Jones potential to calculate
-//   the forces on each atom.  Then uses a = F/m to calculate the
-//   accelleration of each atom. 
-void computeAccelerations() {
-    int i, j, k;
-    double f, rSqd;
-    double rij[3]; // position of i relative to j
-    
-    
-    for (i = 0; i < N; i++) {  // set all accelerations to zero
-        for (k = 0; k < 3; k++) {
-            a[i][k] = 0;
-        }
-    }
-    for (i = 0; i < N-1; i++) {   // loop over all distinct pairs i,j
-        for (j = i+1; j < N; j++) {
-            // initialize r^2 to zero
-            rSqd = 0;
-            
-            for (k = 0; k < 3; k++) {
-                //  component-by-componenent position of i relative to j
-                rij[k] = r[i][k] - r[j][k];
-                //  sum of squares of the components
-                rSqd += rij[k] * rij[k];
-            }
-            
-            //  From derivative of Lennard-Jones with sigma and epsilon set equal to 1 in natural units!
-            f = 24 * (2 * pow(rSqd, -7) - pow(rSqd, -4));
-            for (k = 0; k < 3; k++) {
-                //  from F = ma, where m = 1 in natural units!
-                a[i][k] += rij[k] * f;
-                a[j][k] -= rij[k] * f;
-            }
-        }
-    }
-}
-
 void computeAccelerationsOPT() {
     int i, j;
     double f, rSqd;
     double rij[3];
     
-    double rSqd3, rSqd7, ai0, ai1, ai2, rijf[3]; // computeAccelerations variables
+    double rSqd3, rSqd7, ai0, ai1, ai2, rijf[3];
 
-    double sigma6, term1, term2, r2, Pot; // Potential variables
+    double sigma6, term1, term2, r2, Pot; 
     sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
     Pot = 0;
     #pragma omp parallel for
     for (i = 0; i < N; i++) {
-        // loop unrolling
         a[i][0] = 0;
         a[i][1] = 0;
         a[i][2] = 0;
     }
     #pragma omp parallel for reduction(+:Pot,a[:N][:3]) private(ai0,ai1,ai2,rij,rSqd,r2,rSqd3,rSqd7,f,term1,term2,rijf)
     for (i = 0; i < N-1; i++) {
-        ai0 = 0; ai1 = 0; ai2 = 0; // Reduces the number of accesses to a[i][0], a[i][1] and a[i][2] by storing the sum's value and writing it into the matrix outside of the loop j.
+        ai0 = 0; ai1 = 0; ai2 = 0; 
         for (j = i+1; j < N; j++) {
-            // loop unrolling
             rij[0] = r[i][0] - r[j][0];
             rij[1] = r[i][1] - r[j][1];
             rij[2] = r[i][2] - r[j][2];
@@ -627,36 +506,29 @@ void computeAccelerationsOPT() {
                         rij[1] * rij[1] +
                         rij[2] * rij[2];
 
-            //  mathematical simplification
             rSqd3 = rSqd*rSqd*rSqd;
             rSqd7 = rSqd3*rSqd3*rSqd;
             f = (48-24*rSqd3) / rSqd7;
 
-            // BEGIN OF POTENTIAL OPERATIONS
-            // mathematical simplification of Potential calculations
             term2 = sigma6/(r2*r2*r2);
             term1 = term2*term2;
             Pot += term1 - term2;
-            // END OF POTENTIAL OPERATIONS
 
-            // loop unrolling using the vars ai0, ai1 and ai2 that reduce the number of accesses to the matrix a
-            rijf[0] = rij[0]*f; rijf[1] = rij[1]*f; rijf[2] = rij[2]*f; // avoids duplicated multiplications
-            ai0     += rijf[0];//rij[0] * f;
-            ai1     += rijf[1];//rij[1] * f;
-            ai2     += rijf[2];//rij[2] * f;
-            a[j][0] -= rijf[0];//rij[0] * f;
-            a[j][1] -= rijf[1];//rij[1] * f;
-            a[j][2] -= rijf[2];//rij[2] * f;
+            rijf[0] = rij[0]*f; rijf[1] = rij[1]*f; rijf[2] = rij[2]*f; 
+            ai0     += rijf[0];
+            ai1     += rijf[1];
+            ai2     += rijf[2];
+            a[j][0] -= rijf[0];
+            a[j][1] -= rijf[1];
+            a[j][2] -= rijf[2];
         }
-        // We only write the value into the matrix when we're outside of loop j in order to minimize the number of accesses to the matrix a.
+        
         a[i][0] += ai0;
         a[i][1] += ai1;
         a[i][2] += ai2;
     }
-    // BEGIN OF POTENTIAL OPERATIONS
     Pot *= 8*epsilon;
     P = Pot;
-    // END OF POTENTIAL OPERATIONS
 }
 
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
