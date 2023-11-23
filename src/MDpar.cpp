@@ -74,7 +74,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp);
 double VelocityVerletOPT(double dt, int iter, FILE *fp);  
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
-void computeAccelerationsOPT();
+void computeAccelerations();
 //  Numerical Recipes function for generation gaussian distribution
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
@@ -273,7 +273,7 @@ int main()
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
     // computeAccelerations();
-    computeAccelerationsOPT();
+    computeAccelerations();
     
     
     // Print number of particles to the trajectory file
@@ -479,7 +479,7 @@ double Kinetic() { //Write Function here!
     
 }
 
-void computeAccelerationsOPT() {
+void computeAccelerations() {
     int i, j;
     double f, rSqd;
     double rij[3];
@@ -551,7 +551,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp) {
     }
     //  Update accellerations from updated positions
     // computeAccelerations();
-    computeAccelerationsOPT();
+    computeAccelerations();
     //  Update velocity with updated acceleration
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
@@ -606,7 +606,7 @@ double VelocityVerletOPT(double dt, int iter, FILE *fp) {
             v[i][j] += a[i][j]*metade_dt;
         }
     }
-    computeAccelerationsOPT();
+    computeAccelerations();
     //  Update velocity with updated acceleration
     for (i=0; i<N; i++) {
         for (j=0; j<3; j++) {
