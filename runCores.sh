@@ -1,13 +1,12 @@
 #!/bin/bash
 
-CORES_LIST="4 8 12 16 20 24 28 32 36 40"
+THREADS_LIST="4 8 12 16 20 24 28 32 36 40"
 
 START_TIME="2023-11-17T04:00:00"
-
-for CORES in $CORES_LIST; do
-    JOB_NAME="${CORES}_cores"
+make
+for THREADS in $THREADS_LIST; do
+    JOB_NAME="${THREADS}_threads"
     echo "A correr $JOB_NAME"
-    sbatch --output=results/$JOB_NAME.out --partition=cpar --cpus-per-task=$CORES runP2.sh
-    # sbatch --output=results/$JOB_NAME.out --partition=cpar --cpus-per-task=$CORES --begin=$START_TIME runP2.sh
-    sleep 10
+    export OMP_NUM_THREADS=$THREADS
+    sbatch --output=results/$JOB_NAME.out --partition=cpar --cpus-per-task=40 runP.sh
 done

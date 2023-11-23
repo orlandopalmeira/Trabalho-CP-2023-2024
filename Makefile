@@ -1,9 +1,13 @@
 CC = gcc
 SRC = src/
-CFLAGS = -O3 -funroll-loops -finline-functions -ftree-vectorize -msse4 -fopt-info-vec -fno-omit-frame-pointer -pg # none
+CFLAGS = -O3 -funroll-loops -finline-functions -ftree-vectorize -msse4 -fno-omit-frame-pointer # none
 .DEFAULT_GOAL = all
+NTHREADS = 40
 
 all: MDseq.exe MDpar.exe
+
+gprof: $(SRC)/MDseq.cpp
+	$(CC) $(CFLAGS) -pg -g $(SRC)MDpar.cpp -lm -o MDseq.exe
 
 MDseq.exe: $(SRC)/MDseq.cpp
 	module load gcc/11.2.0;
@@ -25,7 +29,7 @@ runs:
 	sbatch runS.sh
 
 runp:
-	sbatch runP.sh
+	export OMP_NUM_THREADS=$(NTHREADS); sbatch runP.sh
 
 runseq:
 	./MDseq.exe < inputdata.txt

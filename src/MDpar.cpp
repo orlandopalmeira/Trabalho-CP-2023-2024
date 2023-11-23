@@ -489,7 +489,6 @@ void computeAccelerationsOPT() {
     double sigma6, term1, term2, r2, Pot; 
     sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
     Pot = 0;
-    #pragma omp parallel for schedule(dynamic)
     for (i = 0; i < N; i++) {
         a[i][0] = 0;
         a[i][1] = 0;
