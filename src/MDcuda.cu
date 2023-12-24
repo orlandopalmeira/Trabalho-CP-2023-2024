@@ -499,12 +499,13 @@ __global__ void computeAccelerationsKernel(double *r_, double *a_, double *Pot, 
         double f, rSqd;
         double rij[3];
         double rSqd3, rSqd7, rijf[3], sigma6 = 1.0, term1, term2;
+        double local_a[] = {0.0,0.0,0.0}, ri[] = {r_[i*3],r_[i*3+1],r_[i*3+2]};
 
         Pot[i] = 0.0;
         for(int j = i+1; j < N_; j++){
-            rij[0] = r_[i*3]   - r_[j*3];
-            rij[1] = r_[i*3+1] - r_[j*3+1];
-            rij[2] = r_[i*3+2] - r_[j*3+2];
+            rij[0] = ri[0] - r_[j*3];
+            rij[1] = ri[1] - r_[j*3+1];
+            rij[2] = ri[2] - r_[j*3+2];
             rSqd = rij[0] * rij[0] +
                    rij[1] * rij[1] +
                    rij[2] * rij[2];
@@ -520,22 +521,18 @@ __global__ void computeAccelerationsKernel(double *r_, double *a_, double *Pot, 
             rijf[0] = rij[0] * f;
             rijf[1] = rij[1] * f;
             rijf[2] = rij[2] * f;
-
-            // a_[i*3]   += rijf[0];
-            // a_[i*3+1] += rijf[1];
-            // a_[i*3+2] += rijf[2];
-
-            atomicAdd_double(a_+i*3, rijf[0]);
-            atomicAdd_double(a_+i*3+1, rijf[1]);
-            atomicAdd_double(a_+i*3+2, rijf[2]);
             
-            // a_[j*3]   -= rijf[0];
-            // a_[j*3+1] -= rijf[1];
-            // a_[j*3+2] -= rijf[2];
+            local_a[0] += rijf[0];
+            local_a[1] += rijf[1];
+            local_a[2] += rijf[2];
+            
             atomicAdd_double(a_+j*3  , -rijf[0]);
             atomicAdd_double(a_+j*3+1, -rijf[1]);
             atomicAdd_double(a_+j*3+2, -rijf[2]);
         }
+        atomicAdd_double(a_+i*3, local_a[0]);
+        atomicAdd_double(a_+i*3+1, local_a[1]);
+        atomicAdd_double(a_+i*3+2, local_a[2]);
     }
 }
 
