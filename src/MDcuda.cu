@@ -83,9 +83,7 @@ double MeanSquaredVelocityOPT();
 //  Compute total kinetic energy from particle mass and velocities
 double Kinetic();
 
-int main()
-{
-
+int main(){
     //  variable delcarations
     int i;
     double dt, Vol, Temp, Press, Pavg, Tavg, rho;
@@ -217,9 +215,7 @@ int main()
     Vol /= VolFac;
 
     //  Limiting N to MAXPART for practical reasons
-    if (N >= MAXPART)
-    {
-
+    if (N >= MAXPART){
         printf("\n\n\n  MAXIMUM NUMBER OF PARTICLES IS %i\n\n  PLEASE ADJUST YOUR INPUT FILE ACCORDINGLY \n\n", MAXPART);
         exit(0);
     }
@@ -246,9 +242,7 @@ int main()
     afp = fopen(afn, "w"); //  Average T, P, gc, etc from the simulation
 
     int NumTime;
-    if (strcmp(atype, "He") == 0)
-    {
-
+    if (strcmp(atype, "He") == 0){
         // dt in natural units of time s.t. in SI it is 5 f.s. for all other gasses
         dt = 0.2e-14 / timefac;
         //  We will run the simulation for NumTime timesteps.
@@ -287,26 +281,16 @@ int main()
     {
 
         //  This just prints updates on progress of the calculation for the users convenience
-        if (i == tenp)
-            printf(" 10 |");
-        else if (i == 2 * tenp)
-            printf(" 20 |");
-        else if (i == 3 * tenp)
-            printf(" 30 |");
-        else if (i == 4 * tenp)
-            printf(" 40 |");
-        else if (i == 5 * tenp)
-            printf(" 50 |");
-        else if (i == 6 * tenp)
-            printf(" 60 |");
-        else if (i == 7 * tenp)
-            printf(" 70 |");
-        else if (i == 8 * tenp)
-            printf(" 80 |");
-        else if (i == 9 * tenp)
-            printf(" 90 |");
-        else if (i == 10 * tenp)
-            printf(" 100 ]\n");
+        if (i == tenp)printf(" 10 |");
+        else if (i == 2 * tenp)printf(" 20 |");
+        else if (i == 3 * tenp)printf(" 30 |");
+        else if (i == 4 * tenp)printf(" 40 |");
+        else if (i == 5 * tenp)printf(" 50 |");
+        else if (i == 6 * tenp)printf(" 60 |");
+        else if (i == 7 * tenp)printf(" 70 |");
+        else if (i == 8 * tenp)printf(" 80 |");
+        else if (i == 9 * tenp)printf(" 90 |");
+        else if (i == 10 * tenp)printf(" 100 ]\n");
         fflush(stdout);
 
         // This updates the positions and velocities using Newton's Laws
@@ -556,7 +540,7 @@ void computeAccelerationsCUDA(){
     cudaMemcpy(d_r, r, N * 3 * sizeof(double), cudaMemcpyHostToDevice);
     checkCUDAError("cudaMemcpy 2");
 
-    int threadsPerBlock = 512;
+    int threadsPerBlock = 16;
     int nBlocks = (N + threadsPerBlock - 1) / threadsPerBlock;
 
     computeAccelerationsKernel<<<nBlocks, threadsPerBlock>>>(d_r, d_a, d_P, N);

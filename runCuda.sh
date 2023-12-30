@@ -2,5 +2,6 @@
 #SBATCH --time=10:00
 #SBATCH --partition=cpar
 #SBATCH --constraint=k20
+#SBATCH --ntasks=1
 
-nvprof ./MDcuda.exe < inputdata.txt
+time nvprof ./MDcuda.exe < inputdata.txt
