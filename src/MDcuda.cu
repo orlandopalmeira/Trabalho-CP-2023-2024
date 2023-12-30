@@ -67,7 +67,6 @@ void initialize();
 //  print particle coordinates to file for rendering via VMD or other animation software
 //  return 'instantaneous pressure'
 double VelocityVerlet(double dt, int iter, FILE *fp);
-double VelocityVerletOPT(double dt, int iter, FILE *fp);
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
 void computeAccelerations();
@@ -76,10 +75,8 @@ void computeAccelerationsCUDA();
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
 void initializeVelocities();
-void initializeVelocitiesOPT();
 //  Compute mean squared velocity from particle velocities
 double MeanSquaredVelocity();
-double MeanSquaredVelocityOPT();
 //  Compute total kinetic energy from particle mass and velocities
 double Kinetic();
 
@@ -297,7 +294,7 @@ int main(){
         // Also computes the Pressure as the sum of momentum changes from wall collisions / timestep
         // which is a Kinetic Theory of gasses concept of Pressure
         // Press = VelocityVerlet(dt, i+1, tfp);
-        Press = VelocityVerletOPT(dt, i + 1, tfp);
+        Press = VelocityVerlet(dt, i + 1, tfp);
         Press *= PressFac;
 
         //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -305,7 +302,7 @@ int main(){
         //  Instantaneous mean velocity squared, Temperature, Pressure
         //  Potential, and Kinetic Energy
         //  We would also like to use the IGL to try to see if we can extract the gas constant
-        mvs = MeanSquaredVelocityOPT();
+        mvs = MeanSquaredVelocity();
         KE = Kinetic();
         PE = P;
 
@@ -386,7 +383,7 @@ void initialize()
 
     // Call function to initialize velocities
     // initializeVelocities();
-    initializeVelocitiesOPT();
+    initializeVelocities();
 
     /***********************************************
      *   Uncomment if you want to see what the initial positions and velocities are
@@ -401,30 +398,9 @@ void initialize()
      }
      */
 }
+
 //  Function to calculate the averaged velocity squared
 double MeanSquaredVelocity()
-{
-
-    double vx2 = 0;
-    double vy2 = 0;
-    double vz2 = 0;
-    double v2;
-
-    for (int i = 0; i < N; i++)
-    {
-
-        vx2 = vx2 + v[i][0] * v[i][0];
-        vy2 = vy2 + v[i][1] * v[i][1];
-        vz2 = vz2 + v[i][2] * v[i][2];
-    }
-    v2 = (vx2 + vy2 + vz2) / N;
-
-    // printf("  Average of x-component of velocity squared is %f\n",v2);
-    return v2;
-}
-
-//  Function to calculate the averaged velocity squared
-double MeanSquaredVelocityOPT()
 {
 
     double v2 = 0;
@@ -607,73 +583,9 @@ void computeAccelerations(){
     P = Pot;
 }
 
+
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
 double VelocityVerlet(double dt, int iter, FILE *fp)
-{
-    int i, j, k;
-
-    double psum = 0.;
-
-    //  Compute accelerations from forces at current position
-    // this call was removed (commented) for predagogical reasons
-    // computeAccelerations();
-    //  Update positions and velocity with current velocity and acceleration
-    // printf("  Updated Positions!\n");
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-            r[i][j] += v[i][j] * dt + 0.5 * a[i][j] * dt * dt;
-
-            v[i][j] += 0.5 * a[i][j] * dt;
-        }
-        // printf("  %i  %6.4e   %6.4e   %6.4e\n",i,r[i][0],r[i][1],r[i][2]);
-    }
-    //  Update accellerations from updated positions
-    // computeAccelerations();
-    computeAccelerationsCUDA();
-    //  Update velocity with updated acceleration
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-            v[i][j] += 0.5 * a[i][j] * dt;
-        }
-    }
-
-    // Elastic walls
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-            if (r[i][j] < 0.)
-            {
-                v[i][j] *= -1.;                     //- elastic walls
-                psum += 2 * m * fabs(v[i][j]) / dt; // contribution to pressure from "left" walls
-            }
-            if (r[i][j] >= L)
-            {
-                v[i][j] *= -1.;                     //- elastic walls
-                psum += 2 * m * fabs(v[i][j]) / dt; // contribution to pressure from "right" walls
-            }
-        }
-    }
-
-    /* removed, uncomment to save atoms positions */
-    /*for (i=0; i<N; i++) {
-        fprintf(fp,"%s",atype);
-        for (j=0; j<3; j++) {
-            fprintf(fp,"  %12.10e ",r[i][j]);
-        }
-        fprintf(fp,"\n");
-    }*/
-    // fprintf(fp,"\n \n");
-
-    return psum / (6 * L * L);
-}
-
-// returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
-double VelocityVerletOPT(double dt, int iter, FILE *fp)
 {
     int i, j, k;
 
@@ -714,75 +626,6 @@ double VelocityVerletOPT(double dt, int iter, FILE *fp)
 }
 
 void initializeVelocities()
-{
-
-    int i, j;
-
-    for (i = 0; i < N; i++)
-    {
-
-        for (j = 0; j < 3; j++)
-        {
-            //  Pull a number from a Gaussian Distribution
-            v[i][j] = gaussdist();
-        }
-    }
-
-    // Vcm = sum_i^N  m*v_i/  sum_i^N  M
-    // Compute center-of-mas velocity according to the formula above
-    double vCM[3] = {0, 0, 0};
-
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-
-            vCM[j] += m * v[i][j];
-        }
-    }
-
-    for (i = 0; i < 3; i++)
-        vCM[i] /= N * m;
-
-    //  Subtract out the center-of-mass velocity from the
-    //  velocity of each particle... effectively set the
-    //  center of mass velocity to zero so that the system does
-    //  not drift in space!
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-
-            v[i][j] -= vCM[j];
-        }
-    }
-
-    //  Now we want to scale the average velocity of the system
-    //  by a factor which is consistent with our initial temperature, Tinit
-    double vSqdSum, lambda;
-    vSqdSum = 0.;
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-
-            vSqdSum += v[i][j] * v[i][j];
-        }
-    }
-
-    lambda = sqrt(3 * (N - 1) * Tinit / vSqdSum);
-
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-
-            v[i][j] *= lambda;
-        }
-    }
-}
-
-void initializeVelocitiesOPT()
 {
     int i, j;
     // Vcm = sum_i^N  m*v_i/  sum_i^N  M
