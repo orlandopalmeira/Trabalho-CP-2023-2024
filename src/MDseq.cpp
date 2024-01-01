@@ -615,6 +615,7 @@ void computeAccelerationsOPT() {
     }
 
     for (i = 0; i < N-1; i++) {
+        //! MEM Hier
         ai0 = 0; ai1 = 0; ai2 = 0; // Reduces the number of accesses to a[i][0], a[i][1] and a[i][2] by storing the sum's value and writing it into the matrix outside of the loop j.
         for (j = i+1; j < N; j++) {
             // loop unrolling
@@ -639,6 +640,7 @@ void computeAccelerationsOPT() {
 
             // loop unrolling using the vars ai0, ai1 and ai2 that reduce the number of accesses to the matrix a
             rijf[0] = rij[0]*f; rijf[1] = rij[1]*f; rijf[2] = rij[2]*f; // avoids duplicated multiplications
+            //! MEM Hier
             ai0     += rijf[0];//rij[0] * f;
             ai1     += rijf[1];//rij[1] * f;
             ai2     += rijf[2];//rij[2] * f;
@@ -647,6 +649,7 @@ void computeAccelerationsOPT() {
             a[j][2] -= rijf[2];//rij[2] * f;
         }
         // We only write the value into the matrix when we're outside of loop j in order to minimize the number of accesses to the matrix a.
+        //! MEM Hier
         a[i][0] += ai0;
         a[i][1] += ai1;
         a[i][2] += ai2;

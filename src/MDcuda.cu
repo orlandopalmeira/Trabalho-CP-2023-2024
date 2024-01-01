@@ -400,14 +400,9 @@ void initialize()
 }
 
 //  Function to calculate the averaged velocity squared
-double MeanSquaredVelocity()
-{
-
+double MeanSquaredVelocity(){
     double v2 = 0;
-
-    for (int i = 0; i < N; i++)
-    {
-
+    for (int i = 0; i < N; i++){
         v2 += v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2];
     }
     v2 /= N;
@@ -443,8 +438,7 @@ __device__ double atomicAdd_double(double *address, double val){
     unsigned long long int *address_as_ull = (unsigned long long int *)address;
     unsigned long long int old = *address_as_ull, assumed;
 
-    do
-    {
+    do{
         assumed = old;
         old = atomicCAS(address_as_ull, assumed,
                         __double_as_longlong(val + __longlong_as_double(assumed)));
@@ -585,8 +579,7 @@ void computeAccelerations(){
 
 
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
-double VelocityVerlet(double dt, int iter, FILE *fp)
-{
+double VelocityVerlet(double dt, int iter, FILE *fp){
     int i, j, k;
 
     double psum = 0.;
@@ -597,25 +590,18 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
     // computeAccelerations();
     //  Update positions and velocity with current velocity and acceleration
     // printf("  Updated Positions!\n");
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
+    for (i = 0; i < N; i++){
+        for (j = 0; j < 3; j++){
             r[i][j] += v[i][j] * dt + a[i][j] * metade_dt_sq;
-
             v[i][j] += a[i][j] * metade_dt;
         }
     }
     computeAccelerationsCUDA();
     //  Update velocity with updated acceleration
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
+    for (i = 0; i < N; i++){
+        for (j = 0; j < 3; j++){
             v[i][j] += metade_dt * a[i][j];
-
-            if (r[i][j] < 0. || r[i][j] >= L)
-            {
+            if (r[i][j] < 0. || r[i][j] >= L){
                 v[i][j] *= -1.; //- elastic walls
                 psum += 2 * m * fabs(v[i][j]) / dt;
             }
@@ -625,22 +611,17 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
     return psum / (6 * L * L);
 }
 
-void initializeVelocities()
-{
+void initializeVelocities(){
     int i, j;
     // Vcm = sum_i^N  m*v_i/  sum_i^N  M
     // Compute center-of-mas velocity according to the formula above
     double vCM[3] = {0, 0, 0};
     double vSqdSum, lambda;
     vSqdSum = 0.;
-    for (i = 0; i < N; i++)
-    {
-
-        for (j = 0; j < 3; j++)
-        {
+    for (i = 0; i < N; i++){
+        for (j = 0; j < 3; j++){
             //  Pull a number from a Gaussian Distribution
             v[i][j] = gaussdist();
-
             vCM[j] += m * v[i][j];
         }
     }
@@ -652,11 +633,8 @@ void initializeVelocities()
     //  velocity of each particle... effectively set the
     //  center of mass velocity to zero so that the system does
     //  not drift in space!
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-
+    for (i = 0; i < N; i++){
+        for (j = 0; j < 3; j++){
             v[i][j] -= vCM[j];
             vSqdSum += v[i][j] * v[i][j];
         }
@@ -664,40 +642,29 @@ void initializeVelocities()
 
     lambda = sqrt(3 * (N - 1) * Tinit / vSqdSum);
 
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < 3; j++)
-        {
-
+    for (i = 0; i < N; i++){
+        for (j = 0; j < 3; j++){
             v[i][j] *= lambda;
         }
     }
 }
 
 //  Numerical recipes Gaussian distribution number generator
-double gaussdist()
-{
+double gaussdist(){
     static bool available = false;
     static double gset;
     double fac, rsq, v1, v2;
-    if (!available)
-    {
-        do
-        {
+    if (!available){
+        do{
             v1 = 2.0 * rand() / double(RAND_MAX) - 1.0;
             v2 = 2.0 * rand() / double(RAND_MAX) - 1.0;
             rsq = v1 * v1 + v2 * v2;
         } while (rsq >= 1.0 || rsq == 0.0);
-
         fac = sqrt(-2.0 * log(rsq) / rsq);
         gset = v1 * fac;
         available = true;
-
         return v2 * fac;
-    }
-    else
-    {
-
+    }else{
         available = false;
         return gset;
     }
