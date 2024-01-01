@@ -349,29 +349,21 @@ int main(){
     return 0;
 }
 
-void initialize()
-{
+void initialize(){
     int n, p, i, j, k;
     double pos;
 
     // Number of atoms in each direction
     n = int(ceil(pow(N, 1.0 / 3)));
-
     //  spacing between atoms along a given direction
     pos = L / n;
-
     //  index for number of particles assigned positions
     p = 0;
     //  initialize positions
-    for (i = 0; i < n; i++)
-    {
-        for (j = 0; j < n; j++)
-        {
-            for (k = 0; k < n; k++)
-            {
-                if (p < N)
-                {
-
+    for (i = 0; i < n; i++){
+        for (j = 0; j < n; j++){
+            for (k = 0; k < n; k++){
+                if (p < N){
                     r[p][0] = (i + 0.5) * pos;
                     r[p][1] = (j + 0.5) * pos;
                     r[p][2] = (k + 0.5) * pos;
@@ -406,30 +398,21 @@ double MeanSquaredVelocity(){
         v2 += v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2];
     }
     v2 /= N;
-
     // printf("  Average of x-component of velocity squared is %f\n",v2);
     return v2;
 }
 
 //  Function to calculate the kinetic energy of the system
-double Kinetic()
-{ // Write Function here!
-
+double Kinetic(){ // Write Function here!
     double v2, kin;
-
     kin = 0.;
-    for (int i = 0; i < N; i++)
-    {
-
+    for (int i = 0; i < N; i++){
         v2 = 0.;
-        for (int j = 0; j < 3; j++)
-        {
-
+        for (int j = 0; j < 3; j++){
             v2 += v[i][j] * v[i][j];
         }
         kin += m * v2 / 2.;
     }
-
     // printf("  Total Kinetic Energy is %f\n",N*mvs*m/2.);
     return kin;
 }
@@ -576,7 +559,6 @@ void computeAccelerations(){
     Pot *= 8 * epsilon;
     P = Pot;
 }
-
 
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
 double VelocityVerlet(double dt, int iter, FILE *fp){
