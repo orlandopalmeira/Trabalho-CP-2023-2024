@@ -437,7 +437,6 @@ __global__ void computeAccelerationsKernel(double *r_, double *a_, double *Pot, 
         double rij[3];
         double rSqd3, rSqd7, rijf[3], sigma6 = 1.0, term1, term2;
         double local_a[] = {0.0,0.0,0.0}, ri[] = {r_[i*3],r_[i*3+1],r_[i*3+2]};
-
         Pot[i] = 0.0;
         for(int j = i+1; j < N_; j++){
             rij[0] = ri[0] - r_[j*3];
@@ -451,7 +450,7 @@ __global__ void computeAccelerationsKernel(double *r_, double *a_, double *Pot, 
             rSqd7 = rSqd3 * rSqd3 * rSqd;
             f = (48 - 24 * rSqd3) / rSqd7;
 
-            term2 = sigma6 / (rSqd * rSqd * rSqd);
+            term2 = sigma6 / rSqd3;
             term1 = term2 * term2;
             Pot[i] += term1 - term2;
 
