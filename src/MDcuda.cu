@@ -24,7 +24,6 @@
 
  */
 #include "MDCuda.h"
-#include "omp.h"
 
 // Number of particles
 int N;
@@ -45,7 +44,7 @@ double L;
 double Tinit; // 2;
 //  Vectors!
 //
-const int MAXPART = 5001;
+const int MAXPART = 10001;
 //  Position
 double r[MAXPART][3];
 //  Velocity
@@ -80,7 +79,7 @@ double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
 double Kinetic();
 
-int main(){
+int main(int argc, char *argv[]){
     //  variable delcarations
     int i;
     double dt, Vol, Temp, Press, Pavg, Tavg, rho;
