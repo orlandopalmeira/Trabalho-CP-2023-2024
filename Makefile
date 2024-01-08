@@ -9,9 +9,6 @@ all: MDseq.exe MDpar.exe MDcuda.exe
 
 Makefile: MDseq.exe MDpar.exe MDcuda.exe
 
-gprof: $(SRC)/MDseq.cpp
-	$(CC) $(CFLAGS) -pg -g $(SRC)MDpar.cpp -lm -o MDseq.exe
-
 MDseq.exe: $(SRC)/MDseq.cpp
 	module load gcc/11.2.0;\
 	$(CC) $(CFLAGS) $(SRC)MDseq.cpp -lm -o MDseq.exe
@@ -30,8 +27,9 @@ clean:
 	-rm cp_average.txt
 	-rm cp_output.txt
 	-rm cp_traj.xyz
-	-rm gmon.out
 	-rm slurm-*.out
+
+# Executado pelos alunos
 
 runs:
 	sbatch runS.sh
@@ -39,16 +37,18 @@ runs:
 runp:
 	export OMP_NUM_THREADS=$(NTHREADS); sbatch runP.sh
 
+runcuda:
+	module load gcc/7.2.0;\
+	module load cuda/11.3.1;\
+	sbatch ./runCuda.sh
+
+# Executado pelos docentes
+
 runseq:
 	./MDseq.exe < inputdata.txt
 
 runpar:
 	export OMP_NUM_THREADS=$(NTHREADS); ./MDpar.exe < inputdata.tx
-
-runcuda:
-	module load gcc/7.2.0;\
-	module load cuda/11.3.1;\
-	sbatch ./runCuda.sh
 
 run:
 	module load gcc/7.2.0;\
