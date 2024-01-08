@@ -7,6 +7,8 @@ NTHREADS = 40
 
 all: MDseq.exe MDpar.exe MDcuda.exe
 
+Makefile: MDseq.exe MDpar.exe MDcuda.exe
+
 gprof: $(SRC)/MDseq.cpp
 	$(CC) $(CFLAGS) -pg -g $(SRC)MDpar.cpp -lm -o MDseq.exe
 
@@ -44,6 +46,11 @@ runpar:
 	export OMP_NUM_THREADS=$(NTHREADS); ./MDpar.exe < inputdata.tx
 
 runcuda:
+	module load gcc/7.2.0;\
+	module load cuda/11.3.1;\
+	sbatch ./runCuda.sh
+
+run:
 	module load gcc/7.2.0;\
 	module load cuda/11.3.1;\
 	sbatch ./runCuda.sh
