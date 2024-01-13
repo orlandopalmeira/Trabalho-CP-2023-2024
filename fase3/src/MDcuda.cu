@@ -69,7 +69,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp);
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
 void computeAccelerations();
-void computeAccelerationsCUDA();
+void launchComputeAccelerations();
 //  Numerical Recipes function for generation gaussian distribution
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
@@ -260,7 +260,7 @@ int main(int argc, char *argv[]){
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
     // computeAccelerations();
-    computeAccelerationsCUDA();
+    launchComputeAccelerations();
 
     // Print number of particles to the trajectory file
     fprintf(tfp, "%i\n", N);
@@ -473,7 +473,7 @@ __global__ void computeAccelerationsKernel(double *r_, double *a_, double *Pot, 
     }
 }
 
-void computeAccelerationsCUDA(){
+void launchComputeAccelerations(){
     for (int i = 0; i < N; i++){
         a[i][0] = a[i][1] = a[i][2] = 0;
     }
@@ -515,48 +515,53 @@ void computeAccelerationsCUDA(){
     cudaFree(d_P);
 }
 
-void computeAccelerations(){
+void computeAccelerations() {
+    int i;//, j;
     double f, rSqd;
     double rij[3];
+    
+    double rSqd3, rSqd7, ai0, ai1, ai2, rijf[3];
 
-    double rSqd3, rSqd7, rijf[3], sigma6, term1, term2, Pot;
-    sigma6 = sigma * sigma * sigma * sigma * sigma * sigma;
+    double sigma6, term1, term2, r2, Pot; 
+    sigma6 = sigma*sigma*sigma*sigma*sigma*sigma;
     Pot = 0;
-    for (int i = 0; i < N; i++){
+    for (i = 0; i < N; i++) {
         a[i][0] = 0;
         a[i][1] = 0;
         a[i][2] = 0;
     }
-
-    for (int i = 0; i < N - 1; i++){
-        for (int j = i + 1; j < N; j++){
+    
+    for (i = 0; i < N-1; i++) {
+        ai0 = 0; ai1 = 0; ai2 = 0; 
+        for (int j = i+1; j < N; j++) {
             rij[0] = r[i][0] - r[j][0];
             rij[1] = r[i][1] - r[j][1];
             rij[2] = r[i][2] - r[j][2];
-            rSqd = rij[0] * rij[0] +
-                   rij[1] * rij[1] +
-                   rij[2] * rij[2];
+            rSqd = r2 = rij[0] * rij[0] +
+                        rij[1] * rij[1] +
+                        rij[2] * rij[2];
 
-            rSqd3 = rSqd * rSqd * rSqd;
-            rSqd7 = rSqd3 * rSqd3 * rSqd;
-            f = (48 - 24 * rSqd3) / rSqd7;
+            rSqd3 = rSqd*rSqd*rSqd;
+            rSqd7 = rSqd3*rSqd3*rSqd;
+            f = (48-24*rSqd3) / rSqd7;
 
-            term2 = sigma6 / (rSqd * rSqd * rSqd);
-            term1 = term2 * term2;
+            term2 = sigma6/(r2*r2*r2);
+            term1 = term2*term2;
             Pot += term1 - term2;
 
-            rijf[0] = rij[0] * f;
-            rijf[1] = rij[1] * f;
-            rijf[2] = rij[2] * f;
-            a[i][0] += rijf[0];
-            a[i][1] += rijf[1];
-            a[i][2] += rijf[2];
+            rijf[0] = rij[0]*f; rijf[1] = rij[1]*f; rijf[2] = rij[2]*f; 
+            ai0     += rijf[0];
+            ai1     += rijf[1];
+            ai2     += rijf[2];
             a[j][0] -= rijf[0];
             a[j][1] -= rijf[1];
             a[j][2] -= rijf[2];
         }
+        a[i][0] += ai0;
+        a[i][1] += ai1;
+        a[i][2] += ai2;
     }
-    Pot *= 8 * epsilon;
+    Pot *= 8*epsilon;
     P = Pot;
 }
 
@@ -578,7 +583,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp){
             v[i][j] += a[i][j] * metade_dt;
         }
     }
-    computeAccelerationsCUDA();
+    launchComputeAccelerations();
     //  Update velocity with updated acceleration
     for (i = 0; i < N; i++){
         for (j = 0; j < 3; j++){
