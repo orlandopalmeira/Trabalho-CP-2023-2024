@@ -29,8 +29,6 @@ clean:
 	-rm cp_traj.xyz
 	-rm slurm-*.out
 
-# Executado pelos alunos
-
 runs:
 	sbatch runS.sh
 
@@ -41,8 +39,6 @@ runcuda:
 	module load gcc/7.2.0;\
 	module load cuda/11.3.1;\
 	sbatch ./runCuda.sh
-
-# Executado pelos docentes
 
 runseq:
 	./MDseq.exe < inputdata.txt
