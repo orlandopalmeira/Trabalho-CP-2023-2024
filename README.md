@@ -15,7 +15,7 @@
 </div>
 
 <b> Nota fase 1: 16.6 / 20 </b> <br/>
-<b> Nota fase 2: 12.6 / 20 (penalização por um pequeno data race) </b> <br/>
+<b> Nota fase 2: 12.6 / 20 (melhor relatório (23.4/25); penalização por um pequeno data race) </b> <br/>
 <b> Nota fase 3: 14.4 / 20 </b>
 
 <h3><i>Keywords</i></h3>
